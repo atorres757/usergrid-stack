@@ -24,6 +24,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Util for uploading and updating files in ZooKeeper.
@@ -31,70 +33,36 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
  */
 public class ZooPut implements Watcher {
 
-	private ZooKeeper keeper;
+  private static final Logger logger = LoggerFactory.getLogger(ZooPut.class);
 
-	private boolean closeKeeper = true;
+	private ZooKeeper keeper;
 
 	private boolean connected = false;
 
 	public ZooPut(String host) throws IOException {
 		keeper = new ZooKeeper(host, 10000, this);
-		// TODO: nocommit: this is asynchronous - think about how to deal with
-		// connection
-		// lost, and other failures
-		synchronized (this) {
-			while (!connected) {
-				try {
-					this.wait();
-				} catch (InterruptedException e) {
-					// nocommit
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
 	}
 
-	public ZooPut(ZooKeeper keeper) throws IOException {
-		this.closeKeeper = false;
-		this.keeper = keeper;
-	}
+  /**
+   * Wait until the client can successfully connect to the server
+   */
+  public void waitForInit(){
+    synchronized (this) {
+        try {
+          this.wait(20000);
+        } catch (InterruptedException e) {
+          logger.error("Unable to wait for zookeeper to start", e);
+        }
+      if(! connected){
+        throw new RuntimeException("Failed to connect to zookeeper. The server doesn't appear to be running correctly");
+      }
+    }
+
+    logger.info("Zookeeper client successfully connected");
+  }
 
 	public void close() throws InterruptedException {
-		if (closeKeeper) {
 			keeper.close();
-		}
-	}
-
-	public void makePath(String path) throws KeeperException,
-			InterruptedException {
-		makePath(path, CreateMode.PERSISTENT);
-	}
-
-	public void makePath(String path, CreateMode createMode)
-			throws KeeperException, InterruptedException {
-		// nocommit
-		System.out.println("make:" + path);
-
-		if (path.startsWith("/")) {
-			path = path.substring(1, path.length());
-		}
-		String[] paths = path.split("/");
-		StringBuilder sbPath = new StringBuilder();
-		for (int i = 0; i < paths.length; i++) {
-			String pathPiece = paths[i];
-			sbPath.append("/" + pathPiece);
-			String currentPath = sbPath.toString();
-			Object exists = keeper.exists(currentPath, null);
-			if (exists == null) {
-				CreateMode mode = CreateMode.PERSISTENT;
-				if (i == paths.length - 1) {
-					mode = createMode;
-				}
-				keeper.create(currentPath, null, ZooDefs.Ids.OPEN_ACL_UNSAFE,
-						mode);
-			}
-		}
 	}
 
 

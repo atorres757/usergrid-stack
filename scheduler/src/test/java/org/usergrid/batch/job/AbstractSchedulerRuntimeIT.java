@@ -18,10 +18,12 @@ package org.usergrid.batch.job;
 
 import com.google.common.util.concurrent.Service.State;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.usergrid.SchedulerITSuite;
 import org.usergrid.batch.service.JobSchedulerService;
 import org.usergrid.batch.service.SchedulerService;
 import org.usergrid.cassandra.CassandraResource;
+import org.usergrid.locking.zookeeper.ZookeeperResource;
 
 import java.util.Properties;
 
@@ -34,8 +36,13 @@ import java.util.Properties;
 public class AbstractSchedulerRuntimeIT
 {
   public static CassandraResource cassandraResource = SchedulerITSuite.cassandraResource;
+
+  public static ZookeeperResource zkHelper = SchedulerITSuite.zkHelper;
+
   protected SchedulerService scheduler;
   protected Properties props;
+
+
 
   @Before
   public void setup() {

@@ -17,7 +17,9 @@ package org.usergrid.batch.job;
 
 
 import org.junit.*;
+import org.usergrid.SchedulerITSuite;
 import org.usergrid.cassandra.Concurrent;
+import org.usergrid.locking.zookeeper.ZookeeperResource;
 import org.usergrid.persistence.entities.JobData;
 
 import java.util.concurrent.TimeUnit;
@@ -30,9 +32,9 @@ import static org.junit.Assert.*;
  * @author tnine
  */
 @Concurrent()
-@Ignore( "TODO: Todd fix. Does not reliably pass on our build server." )
 public class SchedulerRuntime2IT extends AbstractSchedulerRuntimeIT
 {
+
   /**
    * Test the scheduler ramps up correctly when there are more jobs to be read
    * after a pause

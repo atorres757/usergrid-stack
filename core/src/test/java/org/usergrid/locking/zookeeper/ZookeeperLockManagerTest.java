@@ -27,22 +27,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.usergrid.cassandra.Concurrent;
 import org.usergrid.locking.Lock;
 import org.usergrid.locking.LockManager;
 import org.usergrid.locking.exception.UGLockException;
 
-
-public class ZookeeperLockManagerTest extends AbstractZooKeeperTest {
+public class ZookeeperLockManagerTest {
 
   private static final Logger logger = LoggerFactory.getLogger(ZookeeperLockManagerTest.class);
+
+  @ClassRule
+  public static ZookeeperResource helper = ZookeeperResource.getInstance();
 
   private static LockManager manager;
 

@@ -17,7 +17,9 @@ package org.usergrid.batch.job;
 
 
 import org.junit.*;
+import org.usergrid.SchedulerITSuite;
 import org.usergrid.cassandra.Concurrent;
+import org.usergrid.locking.zookeeper.ZookeeperResource;
 import org.usergrid.persistence.entities.JobData;
 import org.usergrid.persistence.entities.JobStat;
 import java.util.concurrent.TimeUnit;
@@ -31,10 +33,10 @@ import static org.junit.Assert.*;
  * @author tnine
  */
 @Concurrent()
-@Ignore( "TODO: Todd fix. Does not reliably pass on our build server." )
 public class SchedulerRuntime6IT extends AbstractSchedulerRuntimeIT
 {
   private static final String TIMEOUT_PROP = "usergrid.scheduler.job.timeout";
+
 
 
   /**

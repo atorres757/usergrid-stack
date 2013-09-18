@@ -8,6 +8,7 @@ import org.junit.runners.Suite;
 import org.usergrid.batch.job.*;
 import org.usergrid.cassandra.CassandraResource;
 import org.usergrid.cassandra.Concurrent;
+import org.usergrid.locking.zookeeper.ZookeeperResource;
 
 
 @RunWith( Suite.class )
@@ -30,4 +31,7 @@ public class SchedulerITSuite
 {
     @ClassRule
     public static CassandraResource cassandraResource = CassandraResource.newWithAvailablePorts();
+
+    @ClassRule
+    public static ZookeeperResource zkHelper = ZookeeperResource.getInstance();
 }

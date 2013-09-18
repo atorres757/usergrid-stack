@@ -18,6 +18,7 @@ package org.usergrid.locking.zookeeper;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ public final class ZooKeeperLockManagerImpl implements LockManager {
 
   private String hostPort;
 
-  private int sessionTimeout = 2000;
+  private int sessionTimeout = 10000;
 
   private int maxAttempts = 5;
   
@@ -51,6 +52,8 @@ public final class ZooKeeperLockManagerImpl implements LockManager {
     this.sessionTimeout = sessionTimeout;
     this.maxAttempts = maxAttemps;
     init();
+
+    ;
   }
 
   public ZooKeeperLockManagerImpl() {
@@ -61,6 +64,14 @@ public final class ZooKeeperLockManagerImpl implements LockManager {
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(sessionTimeout, maxAttempts);
     client = CuratorFrameworkFactory.newClient(hostPort, retryPolicy);
     client.start();
+
+    Runtime.getRuntime().addShutdownHook(new Thread(){
+      @Override
+      public void run() {
+        client.close();
+      }
+    }
+    );
     
   }
 
@@ -80,6 +91,15 @@ public final class ZooKeeperLockManagerImpl implements LockManager {
     
     return new ZookeeperLockImpl(new InterProcessMutex(client, lockPath));
 
+  }
+
+  @PreDestroy
+  public void shutdown(){
+    if(client == null){
+      return;
+    }
+
+    client.close();
   }
 
   public String getHostPort() {
@@ -105,5 +125,6 @@ public final class ZooKeeperLockManagerImpl implements LockManager {
   public void setMaxAttempts(int maxAttemps) {
     this.maxAttempts = maxAttemps;
   }
+
 
 }

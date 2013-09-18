@@ -30,7 +30,6 @@ import static org.junit.Assert.assertTrue;
  * @author tnine
  */
 @Concurrent()
-@Ignore( "TODO: Todd fix. Does not reliably pass on our build server." )
 public class SchedulerRuntime1IT extends AbstractSchedulerRuntimeIT
 {
   @Test

@@ -35,6 +35,7 @@ import org.usergrid.locking.Lock;
 import org.usergrid.locking.LockManager;
 import org.usergrid.locking.exception.UGLockException;
 
+
 public class SingleNodeLockTestSingleNode {
 
   private static final Logger LOG = LoggerFactory.getLogger(SingleNodeLockTestSingleNode.class);

@@ -50,7 +50,7 @@ public class HectorLockManagerIT extends AbstractCoreIT
     private static final Logger LOG = LoggerFactory.getLogger( HectorLockManagerIT.class );
 
     private static LockManager manager;
-    private static ExecutorService pool;
+    private ExecutorService pool;
 
 
     @BeforeClass
