@@ -1,4 +1,6 @@
-
+#The intention of this script is to have a script available that would facilitate loading exported data from s3 to amazon REDSHIFT for further processing
+#To reach this goal the script follows amazon's 'upsert' procedure.
+#Dependency's for this script are python and psycopg2 which is used to call the postgres database
 import sys
 #needed to establish postgres connection
 #installed using "sudo port install py27-psycopg2"
