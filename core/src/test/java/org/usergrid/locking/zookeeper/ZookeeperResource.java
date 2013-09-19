@@ -104,10 +104,10 @@ public class ZookeeperResource extends ExternalResource {
     maybestart();
   }
 
-  @Override
-  protected void after() {
-    shutdown();
-  }
+//  @Override
+//  protected void after() {
+//    shutdown();
+//  }
 
   /**
    * Creates a zk client and waits for successful connection to the server
