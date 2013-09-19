@@ -51,7 +51,7 @@ public class ZookeeperLockManagerTest {
 //    AbstractZooKeeperTest.before();
     
     ZooKeeperLockManagerImpl lockImpl = new ZooKeeperLockManagerImpl();
-    lockImpl.setHostPort("localhost:20181");
+    lockImpl.setHostPort(helper.ZOO_KEEPER_HOST_URL);
     lockImpl.setMaxAttempts(1000);
     lockImpl.setSessionTimeout(2);
     

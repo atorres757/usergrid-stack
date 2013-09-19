@@ -1,10 +1,13 @@
 package org.usergrid.locking.zookeeper;
 
+import org.apache.commons.lang.math.RandomUtils;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.usergrid.cassandra.AvailablePortFinder;
+import org.usergrid.utils.UUIDUtils;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -17,7 +20,6 @@ import java.net.InetSocketAddress;
  */
 public class ZookeeperResource extends ExternalResource {
 
-  public static final String ZOO_KEEPER_HOST = "localhost:20181/";
 
   private static Logger logger = LoggerFactory.getLogger(ZookeeperResource.class);
 
@@ -30,9 +32,15 @@ public class ZookeeperResource extends ExternalResource {
 
   protected ZKServerMain zkServer;
 
-  protected static File tmpDir = new File("./zk_tmp");
+  protected static File tmpDir = new File(String.format("./tmp/zookeeper/instance-%s", UUIDUtils.newTimeUUID()));
 
-  public static final int CLIENT_PORT = 20181;
+  private static final int  DEFAULT_CLIENT_PORT = 20181;
+
+  public static final int  RUNNING_PORT = AvailablePortFinder.getNextAvailable(DEFAULT_CLIENT_PORT
+      + RandomUtils.nextInt(1000));
+
+  public static final String ZOO_KEEPER_HOST_URL = String.format("localhost:%d/", RUNNING_PORT);
+
 
   private ZookeeperResource(){
   }
@@ -74,7 +82,7 @@ public class ZookeeperResource extends ExternalResource {
     zkServer = new ZKServerMain();
 
     // we don't call super.setUp
-    System.setProperty("zkHost", ZOO_KEEPER_HOST);
+    System.setProperty("zookeeper.url", ZOO_KEEPER_HOST_URL);
 
     ZooStartThread zooThread = new ZooStartThread(zkServer);
     zooThread.setDaemon(true);
@@ -96,18 +104,18 @@ public class ZookeeperResource extends ExternalResource {
     maybestart();
   }
 
-//  @Override
-//  protected void after() {
-//    shutdown();
-//  }
+  @Override
+  protected void after() {
+    shutdown();
+  }
 
   /**
    * Creates a zk client and waits for successful connection to the server
    * @throws Exception
    */
   public void waitForClientConnect() throws Exception{
-    ZooPut zooPut = new ZooPut(ZOO_KEEPER_HOST.substring(0,
-        ZOO_KEEPER_HOST.indexOf('/')));
+    ZooPut zooPut = new ZooPut(ZOO_KEEPER_HOST_URL.substring(0,
+        ZOO_KEEPER_HOST_URL.indexOf('/')));
 
     zooPut.waitForInit();
 
@@ -167,9 +175,8 @@ public class ZookeeperResource extends ExternalResource {
       ServerConfig config = new ServerConfig() {
         {
           clientPortAddress = new InetSocketAddress("localhost",
-              CLIENT_PORT);
-          dataDir = tmpDir.getAbsolutePath() + File.separator
-              + "zookeeper/server1/data";
+              RUNNING_PORT);
+          dataDir = tmpDir.getAbsolutePath();
           dataLogDir = dataDir;
 
         }
