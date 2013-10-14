@@ -263,11 +263,13 @@ public class UniqueIndexCleanup extends ToolBase {
               }
 
 
-              logger.info("Reindex complete for entity with id '{} ", id);
+
               em.update(entity);
               
               //now execute the cleanup. This way if the above update fails, we still have enough data to run again later
               m.execute();
+
+              logger.info("Reindex complete for entity with id '{} ", id);
             }
          
           }
