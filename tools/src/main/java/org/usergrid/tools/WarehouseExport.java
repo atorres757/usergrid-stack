@@ -1,4 +1,4 @@
-/*******************************************************************************
+/**
  * Copyright 2013 Apigee Corporation
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- ******************************************************************************/
+ */
+
 package org.usergrid.tools;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -30,7 +31,6 @@ import org.usergrid.persistence.Results.Level;
 import org.usergrid.persistence.entities.Application;
 import org.usergrid.persistence.schema.CollectionInfo;
 import org.usergrid.utils.InflectionUtils;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -39,27 +39,29 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-
 import static org.usergrid.persistence.Schema.getDefaultSchema;
 
 /**
-Exports all known (non-Dynamic) fields from Schema that are primitive, Date, or String into a pipe-delimited file.
-Also includes (hard-coded for now) fields from Notification, Notifier, and Receipt.
-With no -startTime, scans the existing *.csv files in the output directory and starts from last end date found.
-With no -endTime, ends at current time - 1 hour.
-Explicitly sets "cassandra.readcl=ONE" for efficiency.
-*/
+ * Exports all known (non-Dynamic) fields from Schema that are primitive, Date, or String into a pipe-delimited file.
+ * Also includes (hard-coded for now) fields from Notification, Notifier, and Receipt.  With no 
+ * -startTime, scans the existing *.csv files in the output directory and starts from last end date 
+ * found. With no -endTime, ends at current time - 1 hour. Explicitly sets "cassandra.readcl=ONE" 
+ * for efficiency.
+ */
 public class WarehouseExport extends ExportingToolBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(WarehouseExport.class);
   private static final char SEPARATOR = '|';
-  private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-  private static final String[] BASE_ATTRIBUTES = { "uuid", "organization", "application", "type", "created", "modified" };
+  private static final SimpleDateFormat DATE_FORMAT = 
+    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+  private static final String[] BASE_ATTRIBUTES = 
+    { "uuid", "organization", "application", "type", "created", "modified" };
   private static final String START_TIME = "startTime";
   private static final String END_TIME = "endTime";
 
   private static final String[] NOTIFICATION_ATTRIBUTES =
-      { "payloads", "queued", "started", "finished", "deliver", "expire", "canceled", "errorMessage", "statistics"};
+      { "payloads", "queued", "started", "finished", "deliver", "expire", "canceled", 
+        "errorMessage", "statistics"};
   private static final String[] NOTIFIER_ATTRIBUTES = { "provider", "environment" };
   private static final String[] RECEIPT_ATTRIBUTES =
       { "payload", "sent", "errorCode", "errorMessage", "notifierId", "notificationUUID" };
@@ -130,8 +132,10 @@ public class WarehouseExport extends ExportingToolBase {
 
     Options options = super.createOptions();
 
-    Option startTime = OptionBuilder.hasArg().withDescription("minimum modified time -startTime").create(START_TIME);
-    Option endTime = OptionBuilder.hasArg().withDescription("maximum modified time -endTime").create(END_TIME);
+    Option startTime = OptionBuilder.hasArg().withDescription(
+            "minimum modified time -startTime").create(START_TIME);
+    Option endTime = OptionBuilder.hasArg().withDescription(
+            "maximum modified time -endTime").create(END_TIME);
 
     options.addOption(startTime);
     options.addOption(endTime);
@@ -165,12 +169,14 @@ public class WarehouseExport extends ExportingToolBase {
     if (line.hasOption(END_TIME)) {
       endTime = new Date(Long.parseLong(line.getOptionValue(END_TIME)));
     } else {
-      endTime = new Date(System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(1L, TimeUnit.HOURS));
+      endTime = 
+        new Date(System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(1L, TimeUnit.HOURS));
     }
   }
 
   private long readEndTime(File file) throws Exception {
-    CSVReader reader = new CSVReader(new FileReader(file), SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, '\'');
+    CSVReader reader = new CSVReader(new FileReader(file), 
+            SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, '\'');
     try {
       String[] firstLine = reader.readNext();
       if ("start".equals(firstLine[0]) && "end".equals(firstLine[2])) {
@@ -183,7 +189,8 @@ public class WarehouseExport extends ExportingToolBase {
   }
 
   private void writeMetadata() {
-    writer.writeNext(new String[] { "start", "" + startTime.getTime(), "end", "" + endTime.getTime() });
+    writer.writeNext(
+            new String[] { "start", "" + startTime.getTime(), "end", "" + endTime.getTime() });
   }
 
   private void writeHeaders() {
@@ -272,7 +279,8 @@ public class WarehouseExport extends ExportingToolBase {
 
     if (collectionNames != null) { return collectionNames; }
 
-    Collection<CollectionInfo> system_collections = getDefaultSchema().getCollections(Application.ENTITY_TYPE).values();
+    Collection<CollectionInfo> system_collections = 
+            getDefaultSchema().getCollections(Application.ENTITY_TYPE).values();
 
     ArrayList<String> collections = new ArrayList<String>(system_collections.size());
     for (CollectionInfo collection : system_collections) {
@@ -286,13 +294,15 @@ public class WarehouseExport extends ExportingToolBase {
     return collections.toArray(collectionNames);
   }
 
-  private void exportApplicationsForOrg(Entry<UUID, String> orgIdAndName, String queryString) throws Exception {
+  private void exportApplicationsForOrg(Entry<UUID, String> orgIdAndName, String queryString) 
+          throws Exception {
 
     LOG.info("organization: {} / {}", orgIdAndName.getValue(), orgIdAndName.getKey());
 
     String orgName = orgIdAndName.getValue();
 
-    BiMap<UUID, String> applications = managementService.getApplicationsForOrganization(orgIdAndName.getKey());
+    BiMap<UUID, String> applications = 
+            managementService.getApplicationsForOrganization(orgIdAndName.getKey());
     for (Entry<UUID, String> appIdAndName : applications.entrySet()) {
 
       String appName = appIdAndName.getValue();
@@ -310,7 +320,8 @@ public class WarehouseExport extends ExportingToolBase {
         // set up for retrieving only the necessary properties
         String entityType = InflectionUtils.singularize(collectionName);
         String[] props = cfm.get(entityType);
-        Collection<String> properties = new ArrayList<String>(BASE_ATTRIBUTES.length + (props != null ? props.length : 0));
+        Collection<String> properties = 
+                new ArrayList<String>(BASE_ATTRIBUTES.length + (props != null ? props.length : 0));
         properties.addAll(Arrays.asList(BASE_ATTRIBUTES));
         if (props != null) { properties.addAll(Arrays.asList(props)); }
 
@@ -336,7 +347,8 @@ public class WarehouseExport extends ExportingToolBase {
     }
   }
 
-  private void write(String orgName, String appName, Entity entity, EntityManager em) throws Exception {
+  private void write(String orgName, String appName, Entity entity, EntityManager em) 
+          throws Exception {
 
     Map<String,String[]> cfm = getCollectionFieldMap();
 
