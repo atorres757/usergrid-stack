@@ -19,7 +19,8 @@ import static org.usergrid.utils.MapUtils.toMapList;
  * To change this template use File | Settings | File Templates.
  */
 public class CounterQueryTest {
-
+    private static final String SIMPLE_JSON =
+            "{\"tableName\":\"Counters\",\"keyName\":\"k1\",\"columnName\":\"c1\",\"value\":1}";
     @Test
     public void testOrgPOSTParams() {
         CounterQuery cq = new CounterQuery();
@@ -51,7 +52,10 @@ public class CounterQueryTest {
         cq1.newQueryIfNull(null);
         cq1.newQueryIfNull(cq);
         cq1.fromJsonString("");
-        //cq1.addCounterFilter(null);
+        Object o = JsonUtils.parse(SIMPLE_JSON);
+        Map<String, List<String>> params = cast(toMapList((Map) o));
+        cq1.fromQueryParams(params);
+        cq1.addCounterFilter("");
         cq1.getLimit(5)  ;
        // Object o = JsonUtils.parse("a/b/c");
         //Map<String, List<String>> params = cast(toMapList((Map) o));

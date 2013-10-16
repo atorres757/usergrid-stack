@@ -18,22 +18,13 @@ package org.usergrid.clustering.hazelcast;
 import java.util.Collection;
 import java.util.Set;
 
+import com.hazelcast.core.*;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.InstanceEvent;
-import com.hazelcast.core.InstanceListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MessageListener;
 
 @Ignore
 public class HazelcastTest implements InstanceListener, MessageListener<Object> {
@@ -71,15 +62,32 @@ public class HazelcastTest implements InstanceListener, MessageListener<Object> 
 
         Collection<Instance> instances = Hazelcast.getInstances();
         for (Instance instance : instances) {
+            InstanceEvent createdEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED,instance);
+            HazelcastLifecycleMonitor hm = new HazelcastLifecycleMonitor();
+            hm.init();
+            hm.instanceCreated(createdEvent);
+            Assert.assertEquals("CREATED", createdEvent.getEventType().name());
             logger.info("ID: [" + instance.getId() + "] Type: ["
                     + instance.getInstanceType() + "]");
+            InstanceEvent destroyedEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED,instance);
+            hm.instanceDestroyed(destroyedEvent);
+            Assert.assertEquals("DESTROYED", destroyedEvent.getEventType().name());
         }
 
         Set<Member> setMembers = Hazelcast.getCluster().getMembers();
+        Cluster c = Hazelcast.getCluster();
         for (Member member : setMembers) {
+            MembershipEvent eventAdded = new MembershipEvent(c,member, MembershipEvent.MEMBER_ADDED);
+            HazelcastLifecycleMonitor hm = new HazelcastLifecycleMonitor();
+            hm.memberAdded(eventAdded);
+            Assert.assertEquals(1, eventAdded.getEventType());
             logger.info("isLocalMember " + member.localMember());
             logger.info("member.inetsocketaddress "
                     + member.getInetSocketAddress());
+
+            MembershipEvent eventRemoved = new MembershipEvent(c,member, MembershipEvent.MEMBER_REMOVED);
+            hm.memberRemoved(eventRemoved);
+            Assert.assertEquals(3, eventRemoved.getEventType());
         }
 
     }

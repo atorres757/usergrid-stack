@@ -166,7 +166,7 @@ public class QueueIndexUpdate {
 			return path;
 		}
 
-		public void setPath(String path) {
+		public void queueId(String path) {
 			this.path = path;
 		}
 

@@ -15,11 +15,7 @@
  ******************************************************************************/
 package org.usergrid.mq;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
@@ -393,4 +389,75 @@ public class MessagesIT extends AbstractCoreIT
         assertFalse(qm.hasPendingReads(queuePath, null));
     }
 
+    @Test
+    public void testMessage()     {
+        Message m = new Message();
+        Message m1 = new Message();
+        List mlist = new ArrayList();
+        mlist.add(m);
+        mlist.add(m1);
+        Message.sort(mlist)  ;
+        Message.sortReversed(mlist);
+        Message.compare(null,null);
+        Message.compare(null,m1);
+        Message.compare(m,null);
+        Message.compare(m,m1);
+        m.getByteProperty("bname") ;
+       // m.setUuid(UUID.randomUUID());
+        m.setFloatProperty("fname", 2);
+        m.getFloatProperty("fname");
+        m.setDoubleProperty("dname", 2.3);
+        m.getDoubleProperty("dname");
+        m.setBooleanProperty("bname", true);
+        m.getBooleanProperty("bname")   ;
+        m.setIntProperty("iname", 2);
+        m.getIntProperty("iname");
+        m.setLongProperty("lname", 1l);
+        m.getLongProperty("lname") ;
+        m.setByteProperty("byname",(byte)0xFE);
+        m.getByteProperty("byname");
+        m.setObjectProperty("oname", m1);
+        m.getObjectProperty("oname");
+        m.setShortProperty("shname", (short)1);
+        m.getShortProperty("shname");
+        m.setStringProperty("sname","string");
+        m.getStringProperty("sname");
+        m.setType("type");
+        m.getType();
+        m.setTimestamp(5l);
+        m.setCategory("category");
+        m.getCategory();
+        Queue q = new Queue("/");
+        m.setReplyTo(q);
+        m.setRedelivered(true);
+        m.setPriority(3);
+        m.setPersistent(true);
+        m.setMessageID(UUID.randomUUID().toString());
+        m.setExpiration(4l);
+        m.setDestination(q);
+        m.setDeliveryMode(1);
+        m.setCorrelationID("correlationId");
+        m.propertyExists("type") ;
+        m.isPersistent();
+        m.getReplyTo();
+        m.getPropertyNames();
+        m.getRedelivered();
+        m.getPriority();
+        m.getMessageID();
+        m.getExpiration();
+        m.getDestination();
+        m.getDeliveryMode();
+        m.getCorrelationID();
+        m.getCorrelationIDAsBytes();
+        m.clearBody();
+        m.clearProperties();
+        m.addCounter("countername", 3);
+        try{
+            m.setUuid(UUID.randomUUID());
+
+        }  catch(Exception e) {
+            LOG.info(e.getMessage());
+        }
+
+    }
 }

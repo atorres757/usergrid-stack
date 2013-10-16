@@ -80,7 +80,7 @@ public class ConnectionResourceTest extends AbstractRestIT
         .get(JsonNode.class);
 
     String uuid = node.get("entities").get(0).get("uuid").getTextValue();
-
+      //String useruid = node.get("name").get(0).get("uuid").getTextValue();
 
 
 
@@ -96,6 +96,17 @@ public class ConnectionResourceTest extends AbstractRestIT
       return;
     }
 
+      try {
+          node = resource().path("/test-organization/test-app/users/" + uuid +"/likes/" + uuid)
+                  .queryParam("access_token", access_token)
+                  .accept(MediaType.APPLICATION_JSON)
+                  .type(MediaType.APPLICATION_JSON_TYPE)
+                  .get(JsonNode.class);
+          assert (false);
+      } catch (UniformInterfaceException uie) {
+          assertEquals(404, uie.getResponse().getClientResponseStatus().getStatusCode());
+          return;
+      }
   }
 
 }
