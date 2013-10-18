@@ -15,12 +15,20 @@
  ******************************************************************************/
 package org.usergrid.security.shiro.principals;
 
+import com.google.common.collect.HashBiMap;
+import org.apache.shiro.authz.SimpleAuthorizationInfo;
+import org.usergrid.management.ApplicationInfo;
+import org.usergrid.management.OrganizationInfo;
 import org.usergrid.management.UserInfo;
+import org.usergrid.persistence.entities.Application;
 import org.usergrid.security.shiro.credentials.AccessTokenCredentials;
+
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class PrincipalIdentifier {
 
-	AccessTokenCredentials accessTokenCredentials;
+	private AccessTokenCredentials accessTokenCredentials;
 
 	public UserInfo getUser() {
 		return null;
@@ -42,5 +50,17 @@ public abstract class PrincipalIdentifier {
 			AccessTokenCredentials accessTokenCredentials) {
 		this.accessTokenCredentials = accessTokenCredentials;
 	}
+
+
+
+  public ApplicationInfo getApplication(){return null;}
+
+  public OrganizationInfo getOrganization(){return null;}
+
+  public Map<UUID, String> getOrganizationSet(){return null;}
+
+  public Map<UUID, String> getApplicationSet(){return null; }
+
+  protected abstract SimpleAuthorizationInfo getAuthorizationInfo();
 
 }

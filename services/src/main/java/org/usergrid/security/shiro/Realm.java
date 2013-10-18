@@ -218,8 +218,16 @@ public class Realm extends AuthorizingRealm {
         OrganizationInfo organization = null;
         ApplicationInfo application = null;
 
+
+      //we shouldn't have more than 1 principal per request.
+
+      principals.byType(PrincipalIdentifier.class);
+
+
         for (PrincipalIdentifier principal : principals
                 .byType(PrincipalIdentifier.class)) {
+
+
 
             if (principal instanceof OrganizationPrincipal) {
                 // OrganizationPrincipals are usually only through OAuth
@@ -435,22 +443,22 @@ public class Realm extends AuthorizingRealm {
                             User.ENTITY_TYPE, user.getUuid()), "groups", null,
                             1000, Level.IDS, false);
                     if (r != null) {
-                        
+
                         Set<String> rolenames = new HashSet<String>();
-                        
+
                         for (UUID groupId : r.getIds()) {
-                          
+
                             Results roleResults = em.getCollection(new SimpleEntityRef(
                                     Group.ENTITY_TYPE, groupId), "roles", null,
                                     1000, Level.CORE_PROPERTIES, false);
-                            
+
                             for(Entity entity : roleResults.getEntities()){
                                 rolenames.add(entity.getName());
                             }
 
                         }
-                        
-                        
+
+
                         grantAppRoles(info, em, applicationId, token, principal, rolenames);
                     }
 
@@ -491,6 +499,7 @@ public class Realm extends AuthorizingRealm {
 
         Subject currentUser = SecurityUtils.getSubject();
         Session session = currentUser.getSession();
+
         session.setAttribute("applications", applicationSet);
         session.setAttribute("organizations", organizationSet);
         if (organization != null) {
