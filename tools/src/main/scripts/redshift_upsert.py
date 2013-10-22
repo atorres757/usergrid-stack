@@ -1,29 +1,43 @@
-#The intention of this script is to have a script available that would facilitate loading exported data from s3 to amazon REDSHIFT for further processing
-#To reach this goal the script follows amazon's 'upsert' procedure.
-#Dependency's for this script are python and psycopg2 which is used to call the postgres database
-import sys
-#needed to establish postgres connection
-#installed using "sudo port install py27-psycopg2"
-import psycopg2
+#-----------------------------------------------------------------------------
+# redshift_upsert.py
+#
+# The intention of this script is to have a script available that would 
+# facilitate loading exported 
+# data from s3 to amazon REDSHIFT for further processing. To reach this goal 
+# the script follows Amazon's upsert procedure.
+#
+# One dependency: Psycog2 is needed to establish Postgres connection.
+#
+# To install on Mac with MacPorts install it via: 
+#    $ sudo port install py27-psycopg2
+#
+# To install on Mac without MacPorts install with:
+#    $ sudo easy_install pip
+#    $ sudo pip install psycopg2
+#
+# Security Group setup: make sure your machine is allowed by the Security Group 
+#
+#-----------------------------------------------------------------------------
 
+import sys
+import psycopg2
 
 def main():
 
-    #setup and configuration, sub X's with valid data
-    host = "XXXXX"
-    dbname = "XXXXX"
-    user = "XXXXX"
-    password = "XXXXX"
-    port = "XXXXX"
-    stagingTable = "XXXXX"
-    mainTable = "XXXXX"
+    # setup and configuration
+    host = "instaopsdw.c47fdstsx0ta.us-east-1.redshift.amazonaws.com"
+    dbname = "instaopsdw"
+    user = "instaopsdev"
+    password = "Test1test"
+    port = "5439"
+    stagingTable = "stagingtable1"
+    mainTable = "maintable1"
     folderToImport = "s3://RedshiftTestLoading/redprac/"
-    aws_secret_access_id = "XXXXX"
-    aws_secret_access_key = "XXXXX"
+    aws_secret_access_id = "AKIAIQBZBLDEBTKPRXEQ"
+    aws_secret_access_key = "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"
 
-    #create table according current export list 
-    table_creation = '''create table newS3Import
-        (id VARCHAR UNIQUE NOT NULL,
+    # create table according current export list 
+    table_creation = ''' (id VARCHAR UNIQUE NOT NULL,
         organization VARCHAR NOT NULL,
         application VARCHAR NOT NULL,
         UGtype VARCHAR  NOT NULL,
@@ -63,53 +77,56 @@ def main():
         user_username VARCHAR
         );'''
     
-    #sets up and connects to database
-    connection = "host=" + host + " dbname=" + dbname + " user=" + user + " password=" + password + " port=" + port
+    # sets up and connects to database
+    connection = "host=" + host + " dbname=" + dbname + " user=" + user 
+    connection = connection + " password=" + password + " port=" + port
     print "Establishing Connection to %s" % (connection)
-    try:
-        created_connection = psycopg2.connect(connection)
-    except:
-        print "Error establishing connection"
-        exit()
+    created_connection = psycopg2.connect(connection)
 
     cursor = created_connection.cursor()
 
-    #create table 
     try:
-        cursor.execute(table_creation)
+        cursor.execute("create table " + mainTable + table_creation)
+        print "Created " + mainTable
     except:
-        print "problem with table creation"
-        exit()
-    
-    #copy data from s3 to redshift staging table
-    try:
-        cursor.execute("COPY "+stagingTable+" from '"+folderToImport+"' credentials 'aws_access_key_id="+aws_secret_access_id +";aws_secret_access_key="+aws_secret_access_key+"' IGNOREHEADER 2 EMPTYASNULL" )
-    except:
-        print "problem with copy"
-        cursor.execute("drop * from " + stagingTable)
-        exit()
+        print "Error creating " + mainTable + " perhaps it already exists"
+        created_connection.rollback()
 
+    try:
+        cursor.execute("drop table " + stagingTable)
+    except:
+        print "Error dropping " + stagingTable
+        created_connection.rollback()
+    
+    try:
+        cursor.execute("create table " + stagingTable + table_creation)
+        print "Created " + stagingTable
+    except:
+        print "Error creating " + stagingTable
+        created_connection.rollback()
+    
+    # copy data from s3 to redshift staging table
+    command = "COPY "+stagingTable+" from '"+folderToImport+"' credentials 'aws_access_key_id="
+    command = command + aws_secret_access_id +";aws_secret_access_key="+aws_secret_access_key
+    command = command +"' IGNOREHEADER 2 EMPTYASNULL" 
+    print "Executing command: " + command
+    cursor.execute(command)
    
     created_connection.commit()
     
-    #run update of upsert command. 
-    try:
-        cursor.execute("UPDATE "+mainTable+" SET id = s.id from " + stagingTable +
-                   " s where "+mainTable+".created = s.created")
-    except:
-        print "problem with update"
-        cursor.execute("drop * from " + stagingTable)
-        exit()
+    # run update of upsert command. 
+    command = "UPDATE " + mainTable + " SET id = s.id from " + stagingTable + " s where "
+    command = command + mainTable + ".created = s.created"
+    print "Executing command: " + command
+    cursor.execute(command)
 
-    #inserts new values in staging table into your main table
-    try:
-        cursor.execute("INSERT INTO "+mainTable+" select s.* from " + stagingTable + " s LEFT JOIN "+mainTable+" n ON s.id = n.id where n.id IS NULL")
-    except:
-        print "problem with insert"
-        cursor.execute("drop * from " + stagingTable)
-        exit()
+    # inserts new values in staging table into your main table
+    command  = "INSERT INTO "+mainTable+" select s.* from " + stagingTable + " s LEFT JOIN "
+    command = command + mainTable + " n ON s.id = n.id where n.id IS NULL"
+    print "Executing command: " + command
+    cursor.execute(command)
 
-    #drop staging table to reduce footprint
+    # drop staging table to reduce footprint
     cursor.execute("drop table " + stagingTable )
     
     created_connection.commit()
