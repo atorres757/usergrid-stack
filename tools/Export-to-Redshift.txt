@@ -1,19 +1,37 @@
 How to Export Usergrid Data to Redshift
 =======================================
 
+Prerequisites
+-------------
+
 Setup a computer with the following software
 
    Java 7
    Python 2.7
    The Python psychopg2 module
 
-Create a directory /usr/local/redshift_upsert
+Unpack Tools Release
+--------------------
 
-Place the usergrid-tools-0.0.28-SNAPSHOT.jar in the directory
+Unpack the Usergrid-Tools release in /usr/share
+You will see the following directory structure:
 
-Place the usergrid-custom.properties file in the directory, edit and set configuration values
+   /usr/share/usergrid_tools/
+      README.txt 
+      bin
+         usergrid-tools.jar
+         usergrid-export.sh
+      conf
+         usergrid-custom.properties
 
-Place the redshift_upsert.py script in the directory, edit and set configuration values
+Edit Configuration
+------------------
 
-Place the script redshift.sh in the directory
+Edit the usergrid-custom.properties file and set all properties indicated by the comments.
 
+Setup Cron Job
+--------------
+
+Create a cron job that calls usergrid-export.sh every four hours.
+
+Once that is done, data will be exported from Usegrid, uploaded to S3 and then added to Redshift.
