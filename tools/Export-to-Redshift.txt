@@ -1,6 +1,12 @@
 How to Export Usergrid Data to Redshift
 =======================================
 
+When getting analytics of who and how your usergrid cluster is being used, 
+SQL is sometimes better than NoSQL. The Redshift export tool lets you export 
+your collections into a SQL datawarehouse to build any metrics of your desire. 
+You can compute how many people are using Usergrid, How many Applications have 
+been created, top users of your cluster, and a whole lot more
+
 Prerequisites
 -------------
 
@@ -27,11 +33,13 @@ You will see the following directory structure:
 Edit Configuration
 ------------------
 
-Edit the usergrid-custom.properties file and set all properties indicated by the comments.
+Edit the usergrid-custom.properties file and set all properties indicated by 
+the comments.
 
 Setup Cron Job
 --------------
 
 Create a cron job that calls usergrid-export.sh every four hours.
 
-Once that is done, data will be exported from Usegrid, uploaded to S3 and then added to Redshift.
+Once that is done, data will be exported from Usegrid, uploaded to S3 and then 
+added to Redshift.

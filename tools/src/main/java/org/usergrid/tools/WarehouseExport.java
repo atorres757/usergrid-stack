@@ -19,6 +19,9 @@ package org.usergrid.tools;
 import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
 import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.inject.Module;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
@@ -39,6 +42,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import org.jclouds.blobstore.AsyncBlobStore;
+import org.jclouds.blobstore.BlobStoreContext;
+import org.jclouds.blobstore.BlobStoreContextFactory;
+import org.jclouds.blobstore.domain.Blob;
+import org.jclouds.blobstore.domain.BlobBuilder;
+import org.jclouds.blobstore.options.PutOptions;
+import org.jclouds.http.config.JavaUrlHttpCommandExecutorServiceModule;
+import org.jclouds.logging.log4j.config.Log4JLoggingModule;
+import org.jclouds.netty.config.NettyPayloadModule;
 import static org.usergrid.persistence.Schema.getDefaultSchema;
 
 /**
@@ -52,19 +64,24 @@ public class WarehouseExport extends ExportingToolBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(WarehouseExport.class);
   private static final char SEPARATOR = '|';
+
   private static final SimpleDateFormat DATE_FORMAT = 
     new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
   private static final String[] BASE_ATTRIBUTES = 
     { "uuid", "organization", "application", "type", "created", "modified" };
+
   private static final String START_TIME = "startTime";
   private static final String END_TIME = "endTime";
 
   private static final String[] NOTIFICATION_ATTRIBUTES =
       { "payloads", "queued", "started", "finished", "deliver", "expire", "canceled", 
         "errorMessage", "statistics"};
+
   private static final String[] NOTIFIER_ATTRIBUTES = { "provider", "environment" };
   private static final String[] RECEIPT_ATTRIBUTES =
       { "payload", "sent", "errorCode", "errorMessage", "notifierId", "notificationUUID" };
+
   private static final Map<String, String[]> URAP_ATTRIBUTES = new HashMap<String, String[]>();
   static {
     URAP_ATTRIBUTES.put("notification", NOTIFICATION_ATTRIBUTES);
@@ -108,7 +125,8 @@ public class WarehouseExport extends ExportingToolBase {
 
     // create writer
     String dateString = DATE_FORMAT.format(new Date());
-    FileWriter fw = new FileWriter(outputDir.getAbsolutePath() + "/" + dateString + ".csv");
+    String fileName = outputDir.getAbsolutePath() + "/" + dateString + ".csv";
+    FileWriter fw = new FileWriter(fileName);
     writer = new CSVWriter(fw, SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, '\'');
 
     try {
@@ -123,6 +141,60 @@ public class WarehouseExport extends ExportingToolBase {
     }
     finally {
       writer.close();
+    }
+
+    // now that file is written, copy it to S3
+    if (line.hasOption("upload")) {
+      LOG.info("Copy to S3");
+      copyToS3(fileName);
+    }
+  }
+
+  private void copyToS3(String fileName) {
+ 
+    String bucketName = (String)properties.get("usergrid.export-bucket-name");
+    String accessId = (String)properties.get("usergrid.export-access-id");
+    String secretKey = (String)properties.get("usergrid.export-secret-key");
+
+    Properties overrides = new Properties();
+    overrides.setProperty("s3" + ".identity", accessId);
+    overrides.setProperty("s3" + ".credential", secretKey);
+
+    final Iterable<? extends Module> MODULES = ImmutableSet.of(
+      new JavaUrlHttpCommandExecutorServiceModule(), 
+      new Log4JLoggingModule(), 
+      new NettyPayloadModule());
+    BlobStoreContext context = 
+      new BlobStoreContextFactory().createContext("s3", MODULES, overrides);
+
+    // Create Container (the bucket in s3)
+    try {
+      AsyncBlobStore blobStore = context.getAsyncBlobStore(); // it can be changed to sync
+      // BlobStore (returns false if it already exists)
+      ListenableFuture<Boolean> createContainer = blobStore.createContainerInLocation(null, bucketName);
+      createContainer.get();
+
+    } catch(Exception ex) {
+      logger.error("Could not start binary service: {}", ex.getMessage());
+      throw new RuntimeException(ex);
+    }
+
+    try {
+      File file = new File(fileName);
+      AsyncBlobStore blobStore = context.getAsyncBlobStore();
+      BlobBuilder blobBuilder = blobStore.blobBuilder(fileName)
+        .payload(file)
+        .calculateMD5()
+        .contentType("text/plain")
+        .contentLength(file.length());
+
+      Blob blob = blobBuilder.build();
+
+      ListenableFuture<String> futureETag = 
+        blobStore.putBlob(bucketName, blob, PutOptions.Builder.multipart());
+
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
